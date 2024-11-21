@@ -11,30 +11,27 @@ public class DropdownHandler : MonoBehaviour
         switch (value)
         {
             case 0:
-                //TODO: Trigger weather based on current location
-                break;
-            case 1:
                 WeatherController.instance.LoadClearScene();
                 break;
-            case 2:
+            case 1:
                 WeatherController.instance.LoadCloudyScene();
                 break;
-            case 3:
+            case 2:
                 WeatherController.instance.LoadRainScene(WeatherIntensity.Light);
                 break;
-            case 4:
+            case 3:
                 WeatherController.instance.LoadRainScene(WeatherIntensity.Moderate);
                 break;
-            case 5:
+            case 4:
                 WeatherController.instance.LoadRainScene(WeatherIntensity.Heavy);
                 break;
-            case 6:
+            case 5:
                 WeatherController.instance.LoadSnowScene(WeatherIntensity.Light);
                 break;
-            case 7:
+            case 6:
                 WeatherController.instance.LoadSnowScene(WeatherIntensity.Moderate);
                 break;
-            case 8:
+            case 7:
                 WeatherController.instance.LoadSnowScene(WeatherIntensity.Heavy);
                 break;
         }

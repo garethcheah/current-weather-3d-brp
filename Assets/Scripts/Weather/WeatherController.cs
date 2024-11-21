@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -17,9 +18,9 @@ public class WeatherController : MonoBehaviour
     public GameObject water;
     public GameObject fire;
     public GameObject plants;
-    public GameObject trees;
     public GameObject rain;
-    public GameObject snow;
+    public GameObject snowLayer1;
+    public GameObject snowLayer2;
     public GameObject[] mountainRanges;
 
     [Header("Materials")]
@@ -30,19 +31,67 @@ public class WeatherController : MonoBehaviour
     public Material waterMaterial;
     public Material iceMateterial;
 
+    private string _location;
+    private string _weatherDescription;
+    private float _temperature;
+
+    public void FetchAndLoadCurrentWeather()
+    {
+        UIManager.instance.ClearUserMessage();
+        CurrentWeather currentWeather = new CurrentWeather();
+        StartCoroutine(currentWeather.FetchCurrentWeatherData(UIManager.instance.GetLatitude(), UIManager.instance.GetLongitude()));
+    }
+
+    public void LoadWeatherScene(string location, string weather, string weatherDescription, float temperature)
+    {
+        WeatherIntensity weatherIntensity = WeatherIntensity.Moderate;
+
+        if (weatherDescription.ToLower().Contains("light"))
+        {
+            weatherIntensity = WeatherIntensity.Light;
+        }
+        else if (weatherDescription.ToLower().Contains("heavy"))
+        {
+            weatherIntensity = WeatherIntensity.Heavy;
+        }
+
+        _location = location;
+        _weatherDescription = weatherDescription;
+        _temperature = temperature;
+
+        switch (weather)
+        {
+            case "Thunderstorm":
+            case "Drizzle":
+            case "Rain":
+                LoadRainScene(weatherIntensity);
+                break;
+            case "Snow":
+                LoadSnowScene(weatherIntensity);
+                break;
+            case "Clear":
+                LoadClearScene();
+                break;
+            case "Clouds":
+                LoadCloudyScene();
+                break;
+        }
+    }
+
     public void LoadClearScene()
     {
-        mainCamera.backgroundColor = new Color(0.5254902f, 0.9333333f, 1.0f);
+        mainCamera.backgroundColor = new Color(0.5254902f, 0.9333333f, 1.0f); // 86EEFF
         directionalLight.SetActive(true);
         clouds.SetActive(true);
         fire.SetActive(true);
         plants.SetActive(true);
         rain.SetActive(false);
-        snow.SetActive(false);
+        snowLayer1.SetActive(false);
+        snowLayer2.SetActive(false);
         SetMountainRangeMaterial(rockMaterial);
         SetGroundMaterial(grassMaterial);
         SetWaterMaterial(waterMaterial);
-        UIManager.instance.SetLocationAndWeatherInfo("Somewhere", WeatherType.Clear, "clear sky", 22.256f);
+        UIManager.instance.SetLocationAndWeatherInfo(_location, WeatherType.Clear, _weatherDescription, _temperature);
         OnWeatherChanged?.Invoke(WeatherType.Clear);
     }
 
@@ -54,11 +103,12 @@ public class WeatherController : MonoBehaviour
         fire.SetActive(true);
         plants.SetActive(true);
         rain.SetActive(false);
-        snow.SetActive(false);
+        snowLayer1.SetActive(false);
+        snowLayer2.SetActive(false);
         SetMountainRangeMaterial(rockMaterial);
         SetGroundMaterial(grassMaterial);
         SetWaterMaterial(waterMaterial);
-        UIManager.instance.SetLocationAndWeatherInfo("Somewhere", WeatherType.Clouds, "scattered clouds", 18.256f);
+        UIManager.instance.SetLocationAndWeatherInfo(_location, WeatherType.Clouds, _weatherDescription, _temperature);
         OnWeatherChanged?.Invoke(WeatherType.Clouds);
     }
 
@@ -69,40 +119,37 @@ public class WeatherController : MonoBehaviour
         clouds.SetActive(false);
         fire.SetActive(false);
         plants.SetActive(true);
-        snow.SetActive(false);
+        snowLayer1.SetActive(false);
+        snowLayer2.SetActive(false);
         SetMountainRangeMaterial(rockMaterial);
         SetGroundMaterial(grassMaterial);
         SetWaterMaterial(waterMaterial);
 
         ParticleSystem rainSystem = rain.GetComponent<ParticleSystem>();
         var emission = rainSystem.emission;
-        string weatherDescription = "rain";
 
         switch (intensity)
         {
             case WeatherIntensity.Light:
                 emission.rateOverTime = 25.0f;
-                weatherDescription = "light rain";
                 break;
             case WeatherIntensity.Moderate:
                 emission.rateOverTime = 100.0f;
-                weatherDescription = "moderate rain";
                 break;
             case WeatherIntensity.Heavy:
                 emission.rateOverTime = 500.0f;
-                weatherDescription = "heavy intensity rain";
                 break;
         }
 
         rain.SetActive(true);
-        UIManager.instance.SetLocationAndWeatherInfo("Somewhere", WeatherType.Rain, weatherDescription, 9.256f);
+        UIManager.instance.SetLocationAndWeatherInfo(_location, WeatherType.Rain, _weatherDescription, _temperature);
         OnWeatherChanged?.Invoke(WeatherType.Rain);
     }
 
     public void LoadSnowScene(WeatherIntensity intensity)
     {
         mainCamera.backgroundColor = new Color(0.1886792f, 0.1886792f, 0.1886792f);
-        directionalLight.SetActive(false);
+        directionalLight.SetActive(true);
         clouds.SetActive(false);
         fire.SetActive(true);
         plants.SetActive(false);
@@ -111,28 +158,30 @@ public class WeatherController : MonoBehaviour
         SetGroundMaterial(snowMaterial);
         SetWaterMaterial(iceMateterial);
 
-        ParticleSystem snowSystem = snow.GetComponent<ParticleSystem>();
-        var emission = snowSystem.emission;
-        string weatherDescription = "snow";
+        ParticleSystem snowSystem1 = snowLayer1.GetComponent<ParticleSystem>();
+        ParticleSystem snowSystem2 = snowLayer2.GetComponent<ParticleSystem>();
+        var emission1 = snowSystem1.emission;
+        var emission2 = snowSystem2.emission;
 
         switch (intensity)
         {
             case WeatherIntensity.Light:
-                emission.rateOverTime = 100.0f;
-                weatherDescription = "light snow";
+                emission1.rateOverTime = 50.0f;
+                emission2.rateOverTime = 50.0f;
                 break;
             case WeatherIntensity.Moderate:
-                emission.rateOverTime = 300.0f;
-                weatherDescription = "snow";
+                emission1.rateOverTime = 200.0f;
+                emission2.rateOverTime = 200.0f;
                 break;
             case WeatherIntensity.Heavy:
-                emission.rateOverTime = 600.0f;
-                weatherDescription = "heavy snow";
+                emission1.rateOverTime = 600.0f;
+                emission2.rateOverTime = 600.0f;
                 break;
         }
 
-        snow.SetActive(true);
-        UIManager.instance.SetLocationAndWeatherInfo("Somewhere", WeatherType.Snow, weatherDescription, -5.256f);
+        snowLayer1.SetActive(true);
+        snowLayer2.SetActive(true);
+        UIManager.instance.SetLocationAndWeatherInfo(_location, WeatherType.Snow, _weatherDescription, _temperature);
         OnWeatherChanged?.Invoke(WeatherType.Snow);
     }
 
